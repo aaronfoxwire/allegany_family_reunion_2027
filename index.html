@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Family Reunion 2027 — Block Out Dates</title>
+<style>
+  :root{
+    --bg:#f7f6f2;
+    --card:#ffffff;
+    --ink:#2b2b2b;
+    --muted:#6b6b6b;
+    --line:#e2e0d8;
+    --accent:#3b7a57;      /* buttons / focus */
+    --accent-soft:#d8ebe0;
+    --block:#c0563f;       /* blockout red */
+    --block-soft:#f3d9d2;
+    --shadow:0 1px 3px rgba(0,0,0,.08),0 6px 18px rgba(0,0,0,.05);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:24px 16px 64px;
+  }
+  .wrap{max-width:920px;margin:0 auto}
+  h1{font-size:1.6rem;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0 0 20px}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:20px;
+    box-shadow:var(--shadow);
+    margin-bottom:20px;
+  }
+
+  .hint{font-size:.85rem;color:var(--muted);margin:0 2px 6px}
+
+  /* Calendars */
+  .cals{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:6px}
+  .month h3{margin:0 0 8px;text-align:center;font-size:1.05rem}
+  .dow,.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .dow div{text-align:center;font-size:.72rem;color:var(--muted);padding-bottom:4px;font-weight:600}
+  .day{
+    aspect-ratio:1/1;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:#fff;
+    cursor:pointer;
+    font-size:.9rem;
+    user-select:none;
+    -webkit-user-select:none;
+    -webkit-touch-callout:none;
+    touch-action:manipulation; /* kill 300ms delay + double-tap zoom, keep page scroll */
+    position:relative;
+    transition:background .1s,border-color .1s;
+  }
+  .day.empty{border:none;background:transparent;cursor:default}
+  .day:not(.empty):hover{border-color:#bbb}
+  .day.block{background:var(--block-soft);border-color:var(--block);color:#7a2f1f;font-weight:600}
+
+  /* Lists */
+  .list{margin-top:6px}
+  .row{
+    display:flex;gap:10px;align-items:center;
+    padding:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:#fdfdfb;
+  }
+  .row .tag{font-size:.8rem;font-weight:600;white-space:nowrap;color:var(--block)}
+  .row input[type=text]{flex:1;min-width:0}
+  .row .rm{
+    border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:1.1rem;
+    padding:2px 6px;border-radius:6px;
+  }
+  .row .rm:hover{background:#eee;color:var(--block)}
+  .empty-note{color:var(--muted);font-size:.9rem;font-style:italic;padding:4px 2px}
+
+  label{display:block;font-weight:600;margin:0 0 6px}
+  input[type=text],textarea{
+    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;
+    font:inherit;background:#fff;color:var(--ink);
+  }
+  input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+  .row input.error{border-color:var(--block);background:#fdf1ee}
+  .row input.error::placeholder{color:var(--block)}
+
+  .submit{
+    background:var(--accent);color:#fff;border:none;border-radius:12px;
+    padding:14px 22px;font-size:1.05rem;font-weight:600;cursor:pointer;width:100%;
+  }
+  .submit:hover{filter:brightness(1.05)}
+  .submit:disabled{opacity:.5;cursor:not-allowed}
+
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
+    background:var(--ink);color:#fff;padding:12px 18px;border-radius:10px;
+    box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .25s;font-size:.92rem;
+  }
+  .toast.show{opacity:1}
+
+  /* Video embed (16:9, responsive) */
+  .video{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden}
+  .video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.82rem;color:var(--muted);margin-top:12px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend .sw{width:14px;height:14px;border-radius:4px;display:inline-block}
+
+  /* ---- Mobile-first tuning (most people fill this out on a phone) ---- */
+  @media (max-width:600px){
+    body{padding:14px 10px 56px}
+    h1{font-size:1.35rem}
+    .sub{font-size:.92rem}
+    .card{padding:14px;border-radius:12px;margin-bottom:14px}
+    .cals{grid-template-columns:1fr;gap:22px}
+    .month h3{font-size:1.1rem}
+    .dow,.grid{gap:5px}
+    .day{font-size:1rem;border-radius:9px}          /* full-width month → larger tap targets */
+    .row{flex-wrap:wrap}
+    .row .tag{flex:1 1 100%}
+    .row input[type=text]{flex:1 1 auto}
+    .submit{padding:16px 22px;font-size:1.1rem}      /* big thumb-friendly button */
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- Intro video (placeholder — swap the embed URL when your video is ready) -->
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="video">
+      <iframe src="https://www.youtube.com/embed/jNQXAC9IVRw" title="Family reunion intro video"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen></iframe>
+    </div>
+  </div>
+
+  <h1>Family Reunion 2027</h1>
+  <p class="sub">Please select any dates from June–August 2027 that you and your immediate family (household) absolutely cannot attend, and add a reason for each. Then enter your family's names and submit. If you have no dates to block out, that's fine — just enter your names and submit. We're committed to finding the date that works for the most people, and we look forward to learning which dates work best for the whole family.</p>
+
+  <div id="form">
+  <!-- Calendar -->
+  <div class="card">
+    <p class="hint">Tap the days that don't work for your immediate family (household). Tap again to deselect.</p>
+    <div class="cals" id="cals"></div>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--block-soft);border:1px solid var(--block)"></span> Can't attend</span>
+    </div>
+  </div>
+
+  <!-- Blockout reasons -->
+  <div class="card">
+    <label>Days you can't attend &amp; why</label>
+    <div class="list" id="blockList"></div>
+  </div>
+
+  <!-- Names + submit -->
+  <div class="card">
+    <label for="names">Which immediate family members does this cover?</label>
+    <input type="text" id="names" placeholder="e.g. Jon Kalata, Christina Kalata, Elias Kalata, Elle Kalata, and Annaleigh Kalata">
+    <div style="height:16px"></div>
+    <button type="button" class="submit" id="submitBtn">Submit our availability</button>
+  </div>
+  </div><!-- /#form -->
+
+  <!-- Thank-you (shown after a successful submission) -->
+  <div class="card thankyou" id="thankyou" hidden>
+    <h2 style="margin:0 0 6px">Thank you! ✅</h2>
+    <p style="margin:0 0 16px;color:var(--muted)">Your family's availability has been submitted. We'll use everyone's responses to find the date that works best for the whole family.</p>
+    <button type="button" class="submit" id="againBtn" style="background:#fff;color:var(--accent);border:1px solid var(--accent)">Submit for another household</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ===== CONFIG =====
+  // Paste your Google Apps Script Web App URL between the quotes below.
+  // Leave it empty ("") to run in demo mode (logs to the console instead of sending).
+  const ENDPOINT = "https://script.google.com/macros/s/AKfycbxiOtrLGvHHRCaLTAjez39sI0IB3Qw-DmkE-jhOYFDY5etFeSiERv97kFwHZvUx2WYdsQ/exec";
+  // ==================
+
+  const YEAR = 2027;
+  const MONTHS = [5,6,7]; // June, July, August (0-indexed)
+  const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const DOW = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+
+  // State: "YYYY-MM-DD" -> reason string
+  const blocks = new Map();
+  let dragging = false, dragAdd = true;
+
+  const iso = (y,m,d)=> `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+  const parseIso = k => { const [y,m,d]=k.split("-").map(Number); return new Date(y,m-1,d); };
+  const fmt = k => { const dt=parseIso(k); return `${MONTH_NAMES[dt.getMonth()].slice(0,3)} ${dt.getDate()}`; };
+  const fmtLong = k => { const dt=parseIso(k); return `${DOW[dt.getDay()]}, ${MONTH_NAMES[dt.getMonth()]} ${dt.getDate()}`; };
+  const shiftKey = (k,delta)=>{ const dt=parseIso(k); dt.setDate(dt.getDate()+delta); return iso(dt.getFullYear(),dt.getMonth(),dt.getDate()); };
+
+  // Group a sorted list of date keys into runs of consecutive calendar days.
+  function groupRuns(sortedKeys){
+    const runs=[]; let cur=null;
+    sortedKeys.forEach(k=>{
+      if(cur && shiftKey(cur[cur.length-1],1)===k){ cur.push(k); }
+      else { cur=[k]; runs.push(cur); }
+    });
+    return runs;
+  }
+
+  // ---------- Render calendars ----------
+  const calsEl = document.getElementById("cals");
+  function buildCalendars(){
+    calsEl.innerHTML="";
+    MONTHS.forEach(m=>{
+      const monthEl=document.createElement("div"); monthEl.className="month";
+      const h=document.createElement("h3"); h.textContent=`${MONTH_NAMES[m]} ${YEAR}`; monthEl.appendChild(h);
+
+      const dowEl=document.createElement("div"); dowEl.className="dow";
+      DOW.forEach(d=>{const c=document.createElement("div");c.textContent=d;dowEl.appendChild(c);});
+      monthEl.appendChild(dowEl);
+
+      const grid=document.createElement("div"); grid.className="grid";
+      const first=new Date(YEAR,m,1).getDay();
+      const days=new Date(YEAR,m+1,0).getDate();
+      for(let i=0;i<first;i++){const e=document.createElement("div");e.className="day empty";grid.appendChild(e);}
+      for(let d=1;d<=days;d++){
+        const cell=document.createElement("div");
+        cell.className="day"; cell.textContent=d; cell.dataset.key=iso(YEAR,m,d);
+        grid.appendChild(cell);
+      }
+      monthEl.appendChild(grid);
+      calsEl.appendChild(monthEl);
+    });
+    paint();
+  }
+
+  // ---------- Paint state onto cells ----------
+  function paint(){
+    document.querySelectorAll(".day[data-key]").forEach(cell=>{
+      cell.classList.toggle("block", blocks.has(cell.dataset.key));
+    });
+  }
+
+  // ---------- Toggle a day ----------
+  function toggleBlock(key,forceAdd){
+    const add = (forceAdd!==undefined) ? forceAdd : !blocks.has(key);
+    if(add){
+      if(!blocks.has(key)){
+        // Inherit the reason of an adjacent blocked day so a growing range keeps one shared reason.
+        const prev=shiftKey(key,-1), next=shiftKey(key,1);
+        let r="";
+        if(blocks.get(prev)) r=blocks.get(prev);
+        else if(blocks.get(next)) r=blocks.get(next);
+        blocks.set(key,r);
+      }
+    }
+    else blocks.delete(key);
+  }
+
+  // ---------- Unified pointer handling ----------
+  //  • Mouse → toggle on press, click-drag to paint a range.
+  //  • Touch → tap toggles a day (adjacent taps auto-group into a range); a swipe scrolls
+  //            the page normally instead of selecting, so long calendars stay easy to navigate.
+  const ptr={down:false,moved:false,x:0,y:0,startKey:null,type:null};
+
+  calsEl.addEventListener("pointerdown",e=>{
+    const cell=e.target.closest(".day[data-key]"); if(!cell) return;
+    ptr.down=true; ptr.moved=false; ptr.x=e.clientX; ptr.y=e.clientY;
+    ptr.startKey=cell.dataset.key; ptr.type=e.pointerType;
+    dragAdd = !blocks.has(ptr.startKey);
+    if(e.pointerType==="mouse"){
+      dragging=true; toggleBlock(ptr.startKey,dragAdd); paint(); renderList(); e.preventDefault();
+    }
+  });
+
+  calsEl.addEventListener("pointermove",e=>{
+    if(!ptr.down) return;
+    if(Math.abs(e.clientX-ptr.x)>8||Math.abs(e.clientY-ptr.y)>8) ptr.moved=true;
+    if(ptr.type==="mouse" && dragging){
+      const el=document.elementFromPoint(e.clientX,e.clientY);
+      const cell=el && el.closest ? el.closest(".day[data-key]") : null;
+      if(cell){ toggleBlock(cell.dataset.key,dragAdd); paint(); renderList(); }
+    }
+  });
+
+  window.addEventListener("pointerup",()=>{
+    // A touch that didn't turn into a scroll counts as a tap.
+    if(ptr.down && ptr.type!=="mouse" && !ptr.moved && ptr.startKey){
+      toggleBlock(ptr.startKey,dragAdd); paint(); renderList();
+    }
+    ptr.down=false; dragging=false;
+  });
+  window.addEventListener("pointercancel",()=>{ptr.down=false;dragging=false;});
+
+  // ---------- Blockout list ----------
+  const blockList=document.getElementById("blockList");
+  function renderList(){
+    const keys=[...blocks.keys()].sort();
+    blockList.innerHTML="";
+    if(keys.length===0){
+      blockList.innerHTML='<div class="empty-note">No days marked yet — tap the days you can\'t attend in the calendar above.</div>';
+      return;
+    }
+    groupRuns(keys).forEach(run=>{
+      const start=run[0], end=run[run.length-1];
+      const row=document.createElement("div"); row.className="row";
+      const tag=document.createElement("span"); tag.className="tag";
+      tag.textContent = run.length===1 ? fmtLong(start) : `${fmt(start)} – ${fmt(end)} · ${run.length} days`;
+      const input=document.createElement("input");
+      input.type="text"; input.placeholder="Reason required (e.g. school, work trip)…";
+      input.value=blocks.get(start)||"";
+      input.dataset.start=start;
+      input.addEventListener("input",()=>{run.forEach(k=>blocks.set(k,input.value));if(input.value.trim())input.classList.remove("error");});
+      const rm=document.createElement("button"); rm.className="rm"; rm.innerHTML="&times;"; rm.title="Remove";
+      rm.addEventListener("click",()=>{run.forEach(k=>blocks.delete(k));paint();renderList();});
+      row.append(tag,input,rm);
+      blockList.appendChild(row);
+    });
+  }
+
+  // ---------- Toast ----------
+  let toastTimer;
+  const toastEl=document.getElementById("toast");
+  function showToast(msg){
+    toastEl.textContent=msg; toastEl.classList.add("show");
+    clearTimeout(toastTimer); toastTimer=setTimeout(()=>toastEl.classList.remove("show"),3200);
+  }
+
+  // ---------- Submit ----------
+  const submitBtn=document.getElementById("submitBtn");
+  submitBtn.addEventListener("click",()=>{
+    const names=document.getElementById("names").value.trim();
+    if(!names){ showToast("Please add which family members this is for."); document.getElementById("names").focus(); return; }
+
+    const blockKeys=[...blocks.keys()].sort();
+
+    // Every blocked-out range needs a reason.
+    const missing=groupRuns(blockKeys).filter(run=>!(blocks.get(run[0])||"").trim());
+    if(missing.length){
+      let firstInput=null;
+      document.querySelectorAll("#blockList input[data-start]").forEach(inp=>{
+        if(!inp.value.trim()){ inp.classList.add("error"); if(!firstInput) firstInput=inp; }
+      });
+      showToast("Please add a reason for each blocked-out date.");
+      if(firstInput) firstInput.focus();
+      return;
+    }
+
+    const payload={
+      names,
+      submittedAt:new Date().toISOString(),
+      blockouts:groupRuns(blockKeys).map(run=>({
+        start:run[0], end:run[run.length-1], days:run.length,
+        label: run.length===1 ? fmt(run[0]) : `${fmt(run[0])} – ${fmt(run[run.length-1])}`,
+        reason: blocks.get(run[0])||""
+      }))
+    };
+
+    // Demo mode: no endpoint configured yet.
+    if(!ENDPOINT){
+      console.log("SUBMISSION PAYLOAD →", JSON.stringify(payload,null,2));
+      showToast("Demo mode: add your Google Sheet URL to send this for real.");
+      showThankYou();
+      return;
+    }
+
+    // Send to the Google Apps Script Web App.
+    submitBtn.disabled=true; submitBtn.textContent="Sending…";
+    fetch(ENDPOINT,{
+      method:"POST",
+      mode:"no-cors", // Apps Script doesn't send CORS headers; we fire-and-forget.
+      headers:{"Content-Type":"text/plain;charset=utf-8"}, // "simple" request, avoids a blocked preflight
+      body:JSON.stringify(payload)
+    })
+    .then(()=>{ showThankYou(); })
+    .catch(()=>{
+      submitBtn.disabled=false; submitBtn.textContent="Submit our availability";
+      showToast("Sorry, that didn't send. Please check your connection and try again.");
+    });
+  });
+
+  function showThankYou(){
+    document.getElementById("form").hidden=true;
+    document.getElementById("thankyou").hidden=false;
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+
+  // "Submit for another household" — reset the form for a fresh entry.
+  document.getElementById("againBtn").addEventListener("click",()=>{
+    blocks.clear();
+    document.getElementById("names").value="";
+    submitBtn.disabled=false; submitBtn.textContent="Submit our availability";
+    paint(); renderList();
+    document.getElementById("thankyou").hidden=true;
+    document.getElementById("form").hidden=false;
+    window.scrollTo({top:0,behavior:"smooth"});
+  });
+
+  // ---------- Init ----------
+  buildCalendars();
+  renderList();
+})();
+</script>
+</body>
+</html>
