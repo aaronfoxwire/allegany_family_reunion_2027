@@ -140,6 +140,14 @@
   #gate .err{color:var(--block);font-size:.85rem;min-height:1.1em;margin-top:8px}
   /* Honeypot — hidden from humans, visible to naive bots */
   .hp{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
+
+  /* "Don't refresh" notice */
+  .notice{
+    display:flex;align-items:center;gap:8px;
+    background:var(--block-soft);border:1px solid var(--block);color:#7a2f1f;
+    border-radius:10px;padding:10px 14px;margin:0 0 20px;font-size:.9rem;font-weight:600;
+  }
+  .notice svg{flex:0 0 auto}
 </style>
 </head>
 <body>
@@ -147,7 +155,7 @@
 <div id="gate">
   <div class="box">
     <h2>Allegany Family Reunion 2027</h2>
-    <p>This page is for our family. Please enter the password to continue.</p>
+    <p>Please enter the password to continue.</p>
     <input type="password" id="gatePw" placeholder="Password" autocomplete="off" autocapitalize="none" spellcheck="false">
     <button type="button" class="submit" id="gateBtn" style="margin-top:12px">Enter</button>
     <div class="err" id="gateErr"></div>
@@ -168,6 +176,10 @@
   <p class="sub">Please select any dates from June–August 2027 that you and your immediate family (household) absolutely cannot attend, and add a reason for each. Then enter your family's names and submit. If you have no dates to block out, that's fine — just enter your names and submit. We're committed to finding the date that works for the most people, and we look forward to learning which dates work best for the whole family.</p>
 
   <div id="form">
+  <div class="notice" role="alert">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+    <span>Please don't refresh or leave this page until you submit — you'll lose your entries.</span>
+  </div>
   <!-- Calendar -->
   <div class="card">
     <p class="hint">Tap the days that don't work for your immediate family (household). Tap again to deselect.</p>
@@ -433,11 +445,19 @@
     });
   });
 
+  let submitted=false;
   function showThankYou(){
+    submitted=true;
     document.getElementById("form").hidden=true;
     document.getElementById("thankyou").hidden=false;
     window.scrollTo({top:0,behavior:"smooth"});
   }
+
+  // Warn before an accidental refresh/close wipes unsaved entries.
+  window.addEventListener("beforeunload",e=>{
+    const hasWork = blocks.size>0 || document.getElementById("names").value.trim()!=="";
+    if(hasWork && !submitted){ e.preventDefault(); e.returnValue=""; }
+  });
 
   // "Submit for another household" — reset the form for a fresh entry.
   document.getElementById("againBtn").addEventListener("click",()=>{
