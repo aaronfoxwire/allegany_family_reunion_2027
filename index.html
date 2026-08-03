@@ -125,10 +125,36 @@
     .row input[type=text]{flex:1 1 auto}
     .submit{padding:16px 22px;font-size:1.1rem}      /* big thumb-friendly button */
   }
+
+  /* Password gate */
+  #gate{
+    position:fixed;inset:0;z-index:1000;background:var(--bg);
+    display:flex;align-items:center;justify-content:center;padding:24px;
+  }
+  #gate .box{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    box-shadow:var(--shadow);padding:26px;max-width:380px;width:100%;text-align:center;
+  }
+  #gate h2{margin:0 0 6px;font-size:1.25rem}
+  #gate p{margin:0 0 16px;color:var(--muted);font-size:.92rem}
+  #gate .err{color:var(--block);font-size:.85rem;min-height:1.1em;margin-top:8px}
+  /* Honeypot — hidden from humans, visible to naive bots */
+  .hp{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
 </style>
 </head>
 <body>
-<div class="wrap">
+<!-- Password gate (soft gate; shown until the correct word is entered) -->
+<div id="gate">
+  <div class="box">
+    <h2>Allegany Family Reunion 2027</h2>
+    <p>This page is for our family. Please enter the password to continue.</p>
+    <input type="password" id="gatePw" placeholder="Password" autocomplete="off" autocapitalize="none" spellcheck="false">
+    <button type="button" class="submit" id="gateBtn" style="margin-top:12px">Enter</button>
+    <div class="err" id="gateErr"></div>
+  </div>
+</div>
+
+<div class="wrap" id="page" hidden>
   <!-- Intro video (placeholder — swap the embed URL when your video is ready) -->
   <div class="card" style="padding:0;overflow:hidden">
     <div class="video">
@@ -161,6 +187,8 @@
   <div class="card">
     <label for="names">Which immediate family members does this cover?</label>
     <input type="text" id="names" placeholder="e.g. Jon Kalata, Christina Kalata, Elias Kalata, Elle Kalata, and Annaleigh Kalata">
+    <!-- Honeypot: real people never see or fill this; bots often do. -->
+    <div class="hp" aria-hidden="true"><label>Website<input type="text" id="hp_website" tabindex="-1" autocomplete="off"></label></div>
     <div style="height:16px"></div>
     <button type="button" class="submit" id="submitBtn">Submit our availability</button>
   </div>
@@ -184,7 +212,26 @@
   // Paste your Google Apps Script Web App URL between the quotes below.
   // Leave it empty ("") to run in demo mode (logs to the console instead of sending).
   const ENDPOINT = "https://script.google.com/macros/s/AKfycbxiOtrLGvHHRCaLTAjez39sI0IB3Qw-DmkE-jhOYFDY5etFeSiERv97kFwHZvUx2WYdsQ/exec";
+  const PASSWORD = "family"; // accepts "Family" or "family" (case-insensitive)
   // ==================
+
+  // ---------- Password gate ----------
+  const gate=document.getElementById("gate");
+  const page=document.getElementById("page");
+  const gatePw=document.getElementById("gatePw");
+  const gateErr=document.getElementById("gateErr");
+  function unlock(){ gate.remove(); page.hidden=false; try{sessionStorage.setItem("reunionUnlocked","1");}catch(e){} }
+  function tryUnlock(){
+    if(gatePw.value.trim().toLowerCase()===PASSWORD){ unlock(); }
+    else { gateErr.textContent="Sorry, that's not the right password."; gatePw.select(); }
+  }
+  // Stay unlocked for the rest of the browser session.
+  try{ if(sessionStorage.getItem("reunionUnlocked")==="1"){ unlock(); } }catch(e){}
+  if(gate){
+    document.getElementById("gateBtn").addEventListener("click",tryUnlock);
+    gatePw.addEventListener("keydown",e=>{ if(e.key==="Enter") tryUnlock(); });
+    gatePw.focus();
+  }
 
   const YEAR = 2027;
   const MONTHS = [5,6,7]; // June, July, August (0-indexed)
@@ -333,6 +380,9 @@
   // ---------- Submit ----------
   const submitBtn=document.getElementById("submitBtn");
   submitBtn.addEventListener("click",()=>{
+    // Honeypot: if this hidden field is filled, it's almost certainly a bot. Pretend success, send nothing.
+    if(document.getElementById("hp_website").value.trim()!==""){ showThankYou(); return; }
+
     const names=document.getElementById("names").value.trim();
     if(!names){ showToast("Please add which family members this is for."); document.getElementById("names").focus(); return; }
 
