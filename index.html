@@ -232,14 +232,16 @@
   const page=document.getElementById("page");
   const gatePw=document.getElementById("gatePw");
   const gateErr=document.getElementById("gateErr");
-  function unlock(){ gate.remove(); page.hidden=false; try{sessionStorage.setItem("reunionUnlocked","1");}catch(e){} }
+  let unlocked=false;
+  function unlock(){ unlocked=true; if(gate) gate.remove(); page.hidden=false; try{sessionStorage.setItem("reunionUnlocked","1");}catch(e){} }
   function tryUnlock(){
     if(gatePw.value.trim().toLowerCase()===PASSWORD){ unlock(); }
     else { gateErr.textContent="Sorry, that's not the right password."; gatePw.select(); }
   }
   // Stay unlocked for the rest of the browser session.
   try{ if(sessionStorage.getItem("reunionUnlocked")==="1"){ unlock(); } }catch(e){}
-  if(gate){
+  // Only wire up the gate if it's still showing (i.e. we didn't just auto-unlock).
+  if(!unlocked){
     document.getElementById("gateBtn").addEventListener("click",tryUnlock);
     gatePw.addEventListener("keydown",e=>{ if(e.key==="Enter") tryUnlock(); });
     gatePw.focus();
