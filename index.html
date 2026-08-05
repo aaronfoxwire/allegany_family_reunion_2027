@@ -80,7 +80,10 @@
   .empty-note{color:var(--muted);font-size:.9rem;font-style:italic;padding:4px 2px}
 
   label{display:block;font-weight:600;margin:0 0 6px}
-  input[type=text],textarea{
+  /* Password is included deliberately: an input under 16px makes iOS Safari zoom
+     in on focus, and since the gate is removed in place (no navigation), the page
+     would stay zoomed. font:inherit keeps it at 16px so that never happens. */
+  input[type=text],input[type=password],textarea{
     width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;
     font:inherit;background:#fff;color:var(--ink);
   }
