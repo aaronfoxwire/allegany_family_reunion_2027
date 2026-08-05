@@ -138,6 +138,10 @@
     background:var(--card);border:1px solid var(--line);border-radius:16px;
     box-shadow:var(--shadow);padding:32px 28px;max-width:420px;width:100%;text-align:center;
   }
+  #gate .photo{
+    display:block;width:100%;height:auto;margin:0 0 20px;
+    border:1px solid var(--line);border-radius:10px;
+  }
   #gate h2{margin:0 0 10px;font-size:1.45rem;line-height:1.25}
   #gate p{margin:0 0 22px;color:var(--muted);font-size:1rem}
   #gate #gatePw{
@@ -167,6 +171,11 @@
 <!-- Password gate (soft gate; shown until the correct word is entered) -->
 <div id="gate">
   <div class="box">
+    <!-- width/height are the real pixel dimensions so the browser reserves the
+         right space and the card doesn't jump once the photo loads. -->
+    <img class="photo" src="632050704-ac53e41b-4914-416b-b7c9-068bebf3b607.jpeg"
+         width="3560" height="1232"
+         alt="The Allegany family gathered outdoors for a group photo at a past reunion">
     <h2>Allegany Family Reunion 2027</h2>
     <p>Please enter the password to continue.</p>
     <input type="password" id="gatePw" placeholder="Password" autocomplete="off" autocapitalize="none" spellcheck="false">
