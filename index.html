@@ -135,12 +135,22 @@
     display:flex;align-items:center;justify-content:center;padding:24px;
   }
   #gate .box{
-    background:var(--card);border:1px solid var(--line);border-radius:14px;
-    box-shadow:var(--shadow);padding:26px;max-width:380px;width:100%;text-align:center;
+    background:var(--card);border:1px solid var(--line);border-radius:16px;
+    box-shadow:var(--shadow);padding:32px 28px;max-width:420px;width:100%;text-align:center;
   }
-  #gate h2{margin:0 0 6px;font-size:1.25rem}
-  #gate p{margin:0 0 16px;color:var(--muted);font-size:.92rem}
-  #gate .err{color:var(--block);font-size:.85rem;min-height:1.1em;margin-top:8px}
+  #gate h2{margin:0 0 10px;font-size:1.45rem;line-height:1.25}
+  #gate p{margin:0 0 22px;color:var(--muted);font-size:1rem}
+  #gate #gatePw{
+    font-size:1.0625rem;   /* 17px — must stay >=16px or iOS Safari zooms on focus */
+    padding:15px 16px;text-align:center;letter-spacing:.02em;
+  }
+  #gate .submit{margin-top:14px;padding:16px 22px;font-size:1.05rem}
+  #gate .err{color:var(--block);font-size:.95rem;min-height:1.2em;margin-top:12px}
+  @media (max-width:600px){
+    #gate{padding:18px}
+    #gate .box{padding:26px 20px;border-radius:14px}
+    #gate h2{font-size:1.3rem}
+  }
   /* Honeypot — hidden from humans, visible to naive bots */
   .hp{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
 
@@ -160,7 +170,7 @@
     <h2>Allegany Family Reunion 2027</h2>
     <p>Please enter the password to continue.</p>
     <input type="password" id="gatePw" placeholder="Password" autocomplete="off" autocapitalize="none" spellcheck="false">
-    <button type="button" class="submit" id="gateBtn" style="margin-top:12px">Enter</button>
+    <button type="button" class="submit" id="gateBtn">Enter</button>
     <div class="err" id="gateErr"></div>
   </div>
 </div>
@@ -236,7 +246,17 @@
   const gatePw=document.getElementById("gatePw");
   const gateErr=document.getElementById("gateErr");
   let unlocked=false;
-  function unlock(){ unlocked=true; if(gate) gate.remove(); page.hidden=false; try{sessionStorage.setItem("reunionUnlocked","1");}catch(e){} }
+  function unlock(){
+    unlocked=true;
+    // Blur before removing: iOS Safari restores the pre-zoom scale when a field
+    // loses focus, but tearing a still-focused field out of the DOM skips that,
+    // which left the page stuck zoomed in after the gate closed.
+    try{ gatePw.blur(); }catch(e){}
+    if(gate) gate.remove();
+    page.hidden=false;
+    window.scrollTo(0,0);
+    try{sessionStorage.setItem("reunionUnlocked","1");}catch(e){}
+  }
   function tryUnlock(){
     if(gatePw.value.trim().toLowerCase()===PASSWORD){ unlock(); }
     else { gateErr.textContent="Sorry, that's not the right password."; gatePw.select(); }
@@ -247,7 +267,9 @@
   if(!unlocked){
     document.getElementById("gateBtn").addEventListener("click",tryUnlock);
     gatePw.addEventListener("keydown",e=>{ if(e.key==="Enter") tryUnlock(); });
-    gatePw.focus();
+    // Autofocus on desktop only — on a phone it just throws the keyboard up
+    // (and any focus-triggered zoom) before the person has read the prompt.
+    if(!window.matchMedia("(pointer:coarse)").matches) gatePw.focus();
   }
 
   const YEAR = 2027;
